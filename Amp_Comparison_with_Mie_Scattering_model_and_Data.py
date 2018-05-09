@@ -86,21 +86,25 @@ def relativeChange_for_oneModel (model_one):
 # --------------------------------------------------- Read in Ascii ----------------------------------------------------
 
 
-# Spitzer file 
+# Treat Spitzer data as a general directory where the file is an ascii file
+# Treat HST data as a general directory where the file is an ascii file
 
 # SPITZER DATA written as an ascii file
-data_SPTZ = ascii.read("/Users/melaniapena/Rsrch/Data/SpitzerData/SPITZER_PHOTOMETRY_1629+03.txt")
+data_SPTZ = ascii.read("Spitzer_data")
 
+# bmjd is a another a time measurement.
 bmjd_SPTZ = data_SPTZ['BMJD']
 flux_SPTZ = data_SPTZ['FLUX']
 flux_err_SPTZ = data_SPTZ['FLUX_ERR']
 x_cen_SPTZ = data_SPTZ['X_CENTROID']
 y_cen_SPTZ = data_SPTZ['Y_CENTROID']
+
 # HUBBLE SPACE DATA written as an ascii file
-data_HST = ascii.read("/Users/melaniapena/Rsrch/Data/HST_data/virtualdatanew.txt")
+data_HST = ascii.read("HST_data")
 bmjd_HST = data_HST['Midtime']
-J_band_flux_HST = data_HST['J_band(ergs/(s*cm^2))']
-J_band_flux_err_HST = data_HST['JBandError']
+
+J_band_flux_HST = data_HST['J_band']
+J_band_flux_err_HST = data_HST['J_band_error']
 H_band_flux_HST = data_HST['H_band(ergs/(s*cm^2))']
 H_band_flux_err_HST = data_HST['HBandError']
 W_band_flux_HST = data_HST['W_band(ergs/(s*cm^2))']
