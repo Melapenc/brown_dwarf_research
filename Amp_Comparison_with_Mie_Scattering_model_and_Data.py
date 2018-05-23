@@ -2,19 +2,17 @@ import sys
 from astropy.io import ascii
 import numpy as np
 import matplotlib as mpl
-from matplotlib import rc
 mpl.use('TkAgg')
 import matplotlib.pyplot as plt
-from astropy.convolution import convolve
+# from astropy.convolution import convolve
 from astropy.stats import sigma_clip
 from scipy.optimize import curve_fit
-from scipy.optimize import leastsq
-from scipy.stats import chisquare
-import pdb
 import os
 import astropy.io.fits as fits
 import matplotlib.lines as lines
-# from blessings import Terminal
+import string
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 def fourier_sinusoidal_series_oneMode(x, a0,b0,a1,b1,freq, offset):
     # sin(alpha + beta) = sin(alpha) * cos(beta) + cos(alpha) * sin(beta)... so on depending how many in a series
@@ -34,7 +32,6 @@ def fourier_sinusoidal_series_twoModes(x, a0,b0,a1,b1,a2,b2, freq, offset):
              + b2*np.sin(2.*2*np.pi*freq*x) \
              + offset
     return result
-# fourier_sinusoidal_series function with modes ranging from 3 to ll modes
 def time_converter(time_data, sptzr=True):
     #converting bmjd to hours
     if sptzr:
@@ -56,6 +53,7 @@ def clip_of_mask (clp_med_flux, x):
     clip = sigma_clip(clp_med_flux, sigma=5, sigma_lower=None, sigma_upper=None, iters=5, cenfunc=np.ma.median, stdfunc=np.std, axis=None, copy=True)
     clipped_x = x[np.logical_not(clip.mask)]
     return clipped_x
+
 def med_flux (x):
     # Reducing the data flux to it's median
     median = np.median(x)  # nan meaning that it does the calc the median but ignores nans
@@ -120,10 +118,14 @@ W_band_flux_HST = data_HST['W_band(ergs/(s*cm^2))']
 W_band_flux_err_HST = data_HST['WBandError']
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+
 # ----------------------------------------------------- SPTZR Data -----------------------------------------------------
 # reduce data flux and time converter to hours
 # flux_med_SPTZ = med_flux(flux_SPTZ)
 hour_SPTZ = time_converter(bmjd_SPTZ)
+
 flux_med_SPTZ = (flux_SPTZ / np.nanmedian(flux_SPTZ))
 flux_err_med_SPTZ =  (flux_err_SPTZ / np.nanmedian(flux_SPTZ))
 # clip the original data using the flux data points
@@ -131,27 +133,26 @@ clip_flux_SPTZ =clip_of_mask_flux(flux_med_SPTZ)
 clip_flux_err_SPTZ =clip_of_mask(flux_med_SPTZ,flux_err_med_SPTZ)
 clip_hour_SPTZ = clip_of_mask(flux_med_SPTZ,hour_SPTZ)
 # convolve the clipped data
-conv_clip_flux_SPTZ = convolve_data(clip_flux_SPTZ)
+# conv_clip_flux_SPTZ = convolve_data(clip_flux_SPTZ)
 
 # stretches the graph but does not affect the x and y axis
 plt.figure(figsize=(10.5,7))
 
+# plotting = plt.plot(bmjd_SPTZ,data_SPTZ,'.')
+# plt.show
+# plt.clf()
+
 # ---------------------- Plotting the Fit and original clipped Data ----------------------
 # original plot SPITZER data
 plt.plot(clip_hour_SPTZ,clip_flux_SPTZ+1,'o',color='xkcd:cerulean blue',markersize=0.8,label='Spitzer Data')
-
-# smooths out the data of Spitzer
-# plt.plot(clip_hour_SPTZ,conv_clip_flux_SPTZ+1,'o',color='xkcd:cerulean blue',markersize=0.8,label='Spitzer Data')
 
 # ----------------------  SPTZ data using two mode fourier series ----------------------
 # fit of the original plotted data using fourier series
 guess_twoMode=[1./5.,1./5.,1./5.,1./5.,1./5.,1./5.,0.1,0.]
 params_SPTZ_twoMode, pcov = curve_fit(fourier_sinusoidal_series_twoModes, clip_hour_SPTZ, clip_flux_SPTZ, p0=guess_twoMode, sigma=clip_flux_err_SPTZ)
 SPTZ_plot = plt.plot(clip_hour_SPTZ,fourier_sinusoidal_series_twoModes(clip_hour_SPTZ,*params_SPTZ_twoMode)+1,'-',  color='xkcd:cerulean blue', linewidth = 1,label = 'Spitzer Fit')
+# ---------------------------------------------------------------------------------------------------------------------
 
-# plt.legend(loc=2)
-
-#  ---------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------ HST Data ------------------------------------------------------
 # Converting julian into hours and since hst data has gap data wee fill in the gaps with numpy linespace
 times_hst = time_converter(bmjd_HST)
@@ -203,8 +204,8 @@ W_Band_line_fit = lines.Line2D([], [], color='xkcd:sunflower', marker='', marker
 SPTZ_line_fit = lines.Line2D([], [], color='xkcd:cerulean blue', marker='', markersize=5, label='[3.6] Fit')
 
 # The legend itself
-# lgd=plt.legend(handles=[J_band_line,H_Band_line,W_Band_line,SPTZ_line, J_band_line_fit,H_Band_line_fit,W_Band_line_fit,SPTZ_line_fit],loc=2, ncol=2)
-lgd=plt.legend(handles=[J_band_line,H_Band_line,W_Band_line,SPTZ_line, J_band_line_fit,H_Band_line_fit,W_Band_line_fit,SPTZ_line_fit],loc=2,bbox_to_anchor=(0.1, -0.13), ncol=2)
+lgd=plt.legend(handles=[J_band_line,H_Band_line,W_Band_line,SPTZ_line, J_band_line_fit,H_Band_line_fit,W_Band_line_fit,SPTZ_line_fit],loc=2, ncol=2)
+# lgd=plt.legend(handles=[J_band_line,H_Band_line,W_Band_line,SPTZ_line, J_band_line_fit,H_Band_line_fit,W_Band_line_fit,SPTZ_line_fit],loc=2,bbox_to_anchor=(0.1, -0.13), ncol=2)
 art = []
 art.append(lgd)
 # Sets the size range of the graph
@@ -418,6 +419,15 @@ save_dir = "/Users/melaniapena/Rsrch/code/2017_fall_semester/data/Int_Amp_Dec_21
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
+a = [.3,.4,.5,.6,.7,.8,.9,1.0,1.1,1.2]
+d = [1.05,1.25,1.5,1.75,2.0,2.25,2.5]
+N_a = int(len(a))
+N_d = int(len(d))
+print N_a,N_d
+chi_sqr_arr = np.zeros((N_d,N_a))
+print chi_sqr_arr
+
+
 # creates a for loop and looks through the address (finds all the files in a directory)
 # only if these files are in ascii format
 for file in os.listdir(file_dir_Int_models):
@@ -449,6 +459,7 @@ for file in os.listdir(file_dir_Int_models):
     chi_squared = chi_squared_GOF(model_amp_atdata,Amp_of_HST_SPTZ,yerr_vector)
     reduced_chi = round(chi_squared, 3)
     chi_squared_to_figure = "Chi-Squared: " + str(reduced_chi)
+    # print(name_of_file),('chi-squared: '),(reduced_chi)
     print(name_of_file),('chi-squared: '),(reduced_chi)
     text_title_2 = "Amp Model Comparison with SPTZ/HST Amp"
     plt.title(text_title_2)
@@ -456,9 +467,26 @@ for file in os.listdir(file_dir_Int_models):
     plt.ylabel('Amplitude', fontsize=14)
     l2 = plt.legend(loc=1)
     plt.figtext(0.02,0.02,chi_squared_to_figure)
-
     # saves and creates a new file in the new folder.
     plt.savefig(save_dir + name_of_file + ".pdf",dpi=600)
-    # plt.grid()
     # plt.show()
+
+
+    #     splits the string file  into an array
+    str_file = file
+    replacements = ('.', '_', 's', 'd')
+    for r in replacements:
+        str_file = str_file.replace(r, ' ')
+    str_file = str_file.split()
+    #    The mean particle size 'a'
+    index_a = int(str_file[4])
+    #    The distribution width 'd'
+    index_d = int(str_file[3])
+    chi_sqr_arr[index_d, index_a] = reduced_chi
+    print(reduced_chi)
+
     plt.clf()
+print(chi_sqr_arr)
+
+chisqr_image = plt.imshow(chi_sqr_arr)
+plt.show()
